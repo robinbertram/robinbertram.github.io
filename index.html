@@ -1,14 +1,220 @@
-<h1>Robin Bertram</h1>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Robin Bertram</title>
+    <link rel="icon" type="image/png" href="assets/img/favicon-16x16.png" sizes="16x16" />
+    <link rel="icon" type="image/png" href="assets/img/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="assets/img/favicon-180x180.png" sizes="180x180" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      class Application {
+        #cmds = [
+          {
+            app: "date",
+            args: [],
+            executionTime: [0],
+            output: [new Date().toISOString()],
+          },
+          {
+            app: "robin",
+            args: ["employment"],
+            executionTime: [0, 1500],
+            output: [
+              "Checking employment status...",
+              '👨🏻‍💻 Appbolget Sverige AB - <a href="https://appbolaget.se">https://appbolaget.se</a>',
+            ],
+          },
+          {
+            app: "robin",
+            args: ["contact"],
+            executionTime: [0, 1000],
+            output: ["Fetching contact details...", "📧 robin.bertram [snail shell] gmail.com"],
+          },
+        ];
 
-<p>
-  Dis is ma lovly website.
-</p>
+        #autoTypeCmds = ["date", "robin employment", "robin contact"];
 
-<p>
-  You can reach me at <code>robin.bertram [snail shell] gmail.com</code>.
-</p>
+        #delayBetweenCommands = 2000;
+        #typeSpeed = [40, 100];
+        #lineNo = 0;
 
-<h2>Links</h2>
-<ul>
-  <li><a href="https://appbolaget.se">Appbolaget</a></li>
-</ul>
+        #sleep(ms) {
+          return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        #random(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        async #executeCmd(prompt) {
+          const terminal = document.querySelector("#terminal");
+          const canvas = document.querySelector("#canvas");
+
+          const args = prompt.split(" ");
+          const app = args.shift();
+
+          let currentCmd = {
+            app: app,
+            args: args,
+            executionTime: [0],
+            output: ["Command not found"],
+          };
+
+          for (const cmd of this.#cmds) {
+            if (cmd.app == app && cmd.args.join("") == args.join("")) {
+              currentCmd = cmd;
+
+              break;
+            }
+          }
+
+          canvas.innerHTML += `
+            <div id="line-${this.#lineNo}" class="cmd">
+              <div class="prompt">
+                <span class="pwd">~/robinbertram</span> <span class="git-branch">(main)</span>
+                <span class="user-type">$</span>
+                  ${currentCmd.app}
+                <span class="args">${currentCmd.args.join(" ")}</span>
+              </div>
+              <div class="output"></div>
+            </div>
+          `;
+
+          const output = canvas.querySelector(`#line-${this.#lineNo} .output`);
+
+          for (const index in currentCmd.output) {
+            await this.#sleep(currentCmd.executionTime[index]);
+
+            output.innerHTML += `<div class="line">${currentCmd.output[index]}</div>`;
+
+            terminal.scrollTop = terminal.scrollHeight;
+          }
+
+          this.#lineNo++;
+        }
+
+        async #typeCmd(prompt) {
+          const promptInput = document.querySelector("#prompt-input");
+
+          for (const char of prompt) {
+            promptInput.value += char;
+
+            await this.#sleep(this.#random(this.#typeSpeed[0], this.#typeSpeed[1]));
+          }
+
+          await this.#sleep(750);
+
+          promptInput.value = "";
+
+          await this.#executeCmd(prompt);
+        }
+
+        async run() {
+          await this.#sleep(1000);
+
+          const app = this;
+          const promptInput = document.querySelector("#prompt-input");
+
+          promptInput.addEventListener("keydown", function (e) {
+            if (e.code == "Enter") {
+              const input = promptInput.value;
+              promptInput.value = "";
+              app.#executeCmd(input);
+            }
+          });
+
+          for (const cmd of this.#autoTypeCmds) {
+            await this.#typeCmd(cmd);
+            await this.#sleep(this.#delayBetweenCommands);
+          }
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function (e) {
+        new Application().run();
+      });
+    </script>
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: #27292c;
+        background: linear-gradient(125deg, #7e1967, #9d2136);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 100%;
+      }
+
+      #terminal * {
+        font-family: Cascadia Mono, Courier New;
+        font-size: 13px;
+      }
+
+      #terminal {
+        width: 500px;
+        height: 250px;
+        padding: 2rem 1rem 1rem;
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border-radius: 1rem;
+        display: flex;
+        flex-direction: column;
+        overflow-y: scroll;
+        scrollbar-width: none;
+      }
+
+      #terminal a {
+        color: #12abd1;
+      }
+
+      .cmd {
+        margin-bottom: 1rem;
+        border-bottom: 1px dashed #660045;
+      }
+
+      .cmd .output {
+        margin: 0.5rem 0;
+      }
+
+      .cmd .output .line {
+        margin: 0.2rem 0;
+      }
+
+      .prompt .pwd {
+        color: #61afef;
+      }
+
+      .prompt .git-branch {
+        color: #03c403;
+      }
+
+      .prompt .args {
+        color: #f92672;
+      }
+
+      #current-prompt input {
+        background: none;
+        color: #fff;
+        border: 0;
+        outline: none;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal">
+      <div id="canvas"></div>
+      <div id="current-prompt" class="prompt">
+        <span class="pwd">~/robinbertram</span> <span class="git-branch">(main)</span>
+        <span class="user-type">$</span>
+        <input id="prompt-input" type="text" title="Prompt" placeholder="" autofocus />
+      </div>
+    </div>
+  </body>
+</html>
